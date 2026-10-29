@@ -1,0 +1,17 @@
+[Unit]
+Description=DEGSON dashboard BI API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=degson
+WorkingDirectory=/opt/degson-dashboard
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/degson-dashboard/bi.env
+ExecStart=/usr/bin/node /opt/degson-dashboard/dist-server/index.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
