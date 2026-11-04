@@ -16,11 +16,12 @@ export function horizontalBars(names: string[], values: number[], color = colors
 }
 
 export function donut(data: { name: string; value: number }[], centerLabel?: string): EChartsOption {
+  // Keep expansion for entrance only. Expansion updates recreate sectors on resize.
   return {
     color: [colors.purple, colors.cyan, colors.blue, colors.pink, colors.gold, '#7BC7AA'],
     tooltip: { trigger: 'item', backgroundColor: '#fff', borderColor: '#DCE6EF', textStyle: { color: colors.text } },
     legend: { bottom: 0, left: 'center', icon: 'circle', itemWidth: 8, itemHeight: 8, textStyle: { color: colors.muted, fontSize: 11 }, pageTextStyle: { color: colors.muted }, type: 'scroll' },
     title: centerLabel ? { text: centerLabel, left: 'center', top: '39%', textStyle: { color: '#24354D', fontSize: 21, fontWeight: 700 } } : undefined,
-    series: [{ type: 'pie', animationType: 'expansion', animationTypeUpdate: 'expansion', animationDuration: 1250, animationDurationUpdate: 850, animationEasing: 'cubicOut', animationEasingUpdate: 'cubicOut', startAngle: 90, radius: ['51%', '72%'], center: ['50%', '43%'], itemStyle: { borderColor: '#fff', borderWidth: 3, borderRadius: 4 }, label: { show: false }, emphasis: { label: { show: true, color: colors.text, formatter: '{b}: {c}' } }, data }],
+    series: [{ type: 'pie', animationType: 'expansion', animationTypeUpdate: 'transition', animationDuration: 1250, animationDurationUpdate: 850, animationEasing: 'cubicOut', animationEasingUpdate: 'cubicOut', startAngle: 90, radius: ['51%', '72%'], center: ['50%', '43%'], itemStyle: { borderColor: '#fff', borderWidth: 3, borderRadius: 4 }, label: { show: false }, emphasis: { label: { show: true, color: colors.text, formatter: '{b}: {c}' } }, data }],
   }
 }

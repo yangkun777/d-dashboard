@@ -69,6 +69,20 @@
 [data-theme="dark"] .refresh-stale-note,[data-theme="dark"] .column-picker p { color: #a6bbcc; }
 [data-theme="dark"] .el-loading-mask { background-color: rgba(10,28,44,.85); }
 [data-theme="dark"] .ranking-chart-scroll,[data-theme="dark"] .page-content { scrollbar-color:#41627b #102338; }
+[data-theme="dark"] .data-empty .el-empty__description p { color: #9bb7cb; }
+/* Color the SVG facets directly so the box stays legible without white glare. */
+[data-theme="dark"] .el-empty {
+  --el-empty-fill-color-0: #3c566d;
+  --el-empty-fill-color-1: #48647c;
+  --el-empty-fill-color-2: #3d596f;
+  --el-empty-fill-color-3: #355167;
+  --el-empty-fill-color-4: #304b61;
+  --el-empty-fill-color-5: #294359;
+  --el-empty-fill-color-6: #253e53;
+  --el-empty-fill-color-7: #20394e;
+  --el-empty-fill-color-8: #1b3247;
+  --el-empty-fill-color-9: #142b3e;
+}
 [data-theme="dark"] .ranking-chart-scroll::-webkit-scrollbar-track { background:#102338; }
 [data-theme="dark"] .ranking-chart-scroll::-webkit-scrollbar-thumb,[data-theme="dark"] .page-content::-webkit-scrollbar-thumb { background:#41627b; border-color:#102338; }
 
@@ -141,7 +155,5 @@
 [data-theme].theme-transitioning *,
 [data-theme].theme-transitioning *::before,
 [data-theme].theme-transitioning *::after {
-  transition-property: background-color, color, border-color, box-shadow, fill, stroke !important;
-  transition-duration: .6s !important;
-  transition-timing-function: ease-in-out !important;
+  transition: none !important;
 }

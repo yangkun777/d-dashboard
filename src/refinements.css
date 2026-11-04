@@ -29,6 +29,25 @@
 .el-pagination.is-background .el-pager li.is-active { box-shadow: 0 2px 6px rgba(40,124,185,.16); }
 .orders-page .el-button:hover,.orders-page .refresh-button:hover { transform: none; }
 .ranking-chart-scroll { scrollbar-gutter: stable; }
+.data-empty { flex: 1; min-width: 0; min-height: 0; display: grid; place-items: center; }
+.data-empty .el-empty { padding: 0; }
+/* Keep the shared empty illustration in the dashboard's light palette. */
+.el-empty {
+  --el-empty-fill-color-0: #ffffff;
+  --el-empty-fill-color-1: #f7fafc;
+  --el-empty-fill-color-2: #f0f5f9;
+  --el-empty-fill-color-3: #eaf1f6;
+  --el-empty-fill-color-4: #e3ecf3;
+  --el-empty-fill-color-5: #dce6ee;
+  --el-empty-fill-color-6: #d2dfe9;
+  --el-empty-fill-color-7: #c8d7e3;
+  --el-empty-fill-color-8: #bdcfdc;
+  --el-empty-fill-color-9: #b0c4d4;
+}
+.data-empty .el-empty__description { margin-top: 12px; }
+.data-empty .el-empty__description p { color: #7b90a3; font-size: 13px; }
+.dark-table .el-table__empty-block { min-height: 190px; }
+.dark-table .el-table__empty-text { width: 100%; }
 .ranking-chart-scroll::-webkit-scrollbar,.page-content::-webkit-scrollbar { width: 7px; height: 7px; }
 .ranking-chart-scroll::-webkit-scrollbar-thumb,.page-content::-webkit-scrollbar-thumb { background: #b8cbd9; border-radius: 8px; border: 2px solid #f3f6fa; }
 .ranking-chart-scroll::-webkit-scrollbar-track { background: #f3f6fa; }
@@ -52,3 +71,9 @@
 .order-copy-button:hover { color:#175b8c; text-decoration:underline; }
 .order-copy-button .el-icon { flex-shrink:0; }
 .orders-table-actions { flex-wrap:wrap; }
+
+/* A short result set should not leave an empty full-screen table. */
+.orders-page { height: auto; min-height: 0; }
+.orders-table-panel { flex: none; }
+.orders-table-panel .table-wrap { flex: none; min-height: 0; }
+.orders-table-panel .el-table { width: 100%; }

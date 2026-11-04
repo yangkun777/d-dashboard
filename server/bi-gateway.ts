@@ -38,27 +38,29 @@ export function createBiGateway(options: BiGatewayOptions = {}) {
   let cachedSecret = ''
   let secretExpiresAt = 0
 
-  async function getSecret() {
+  async function getSecret(signal?: AbortSignal) {
     if (options.signatureSecret) return options.signatureSecret
     if (cachedSecret && Date.now() < secretExpiresAt) return cachedSecret
-    cachedSecret = await readBiSignatureSecret(sharePageUrl)
+    cachedSecret = await readBiSignatureSecret(sharePageUrl, signal)
     secretExpiresAt = Date.now() + 5 * 60 * 1000
     return cachedSecret
   }
 
-  async function fetchDataset(id: string, secret: string, params: Record<string, string> = {}): Promise<unknown> {
+  async function fetchDataset(id: string, secret: string, params: Record<string, string> = {}, signal?: AbortSignal): Promise<unknown> {
     const body = { id, params }
     for (let attempt = 0; attempt < 2; attempt++) {
+      if (signal?.aborted) throw signal.reason instanceof Error ? signal.reason : new Error('客户端已断开')
       let upstream: Response
+      const timeout = AbortSignal.timeout(12000)
       try {
         upstream = await fetch(endpoint, {
           method: 'POST',
-          signal: AbortSignal.timeout(12000),
+          signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
           headers: { 'Content-Type': 'application/json', ...createBiSignature(body, secret) },
           body: JSON.stringify(body),
         })
       } catch (error) {
-        if (attempt === 1) throw error
+        if (signal?.aborted || attempt === 1) throw error
         await new Promise(resolve => setTimeout(resolve, 250))
         continue
       }
@@ -98,28 +100,35 @@ export function createBiGateway(options: BiGatewayOptions = {}) {
       }
     }
 
+    const clientAbort = new AbortController()
+    response.on('close', () => {
+      if (!response.writableEnded) clientAbort.abort()
+    })
+
     try {
-      const secret = await getSecret()
+      const secret = await getSecret(clientAbort.signal)
+      const signal = clientAbort.signal
       if (path === '/api/bi/overview') {
-        const datasets = await Promise.all(overviewDatasetIds.map(async id => [id, await fetchDataset(id, secret)] as const))
+        const datasets = await Promise.all(overviewDatasetIds.map(async id => [id, await fetchDataset(id, secret, {}, signal)] as const))
         response.end(JSON.stringify({ datasets: Object.fromEntries(datasets) }))
       } else if (path === '/api/bi/products') {
-        const datasets = await Promise.all(productDatasetIds.map(async id => [id, await fetchDataset(id, secret)] as const))
+        const datasets = await Promise.all(productDatasetIds.map(async id => [id, await fetchDataset(id, secret, {}, signal)] as const))
         response.end(JSON.stringify({ datasets: Object.fromEntries(datasets) }))
       } else if (path === '/api/bi/ranking') {
-        const datasets = await Promise.all(rankingDatasetIds.map(async id => [id, await fetchDataset(id, secret)] as const))
+        const datasets = await Promise.all(rankingDatasetIds.map(async id => [id, await fetchDataset(id, secret, {}, signal)] as const))
         response.end(JSON.stringify({ datasets: Object.fromEntries(datasets) }))
       } else if (path === '/api/bi/efficiency') {
         const [hours, orders, table] = await Promise.all([
-          fetchDataset('1272000000000100015', secret),
-          fetchDataset('1272000000000100016', secret),
-          fetchDataset('1272000000000100017', secret),
+          fetchDataset('1272000000000100015', secret, {}, signal),
+          fetchDataset('1272000000000100016', secret, {}, signal),
+          fetchDataset('1272000000000100017', secret, {}, signal),
         ])
         response.end(JSON.stringify({ hours, orders, table }))
       } else {
-        response.end(JSON.stringify(await fetchDataset('1272000000000100018', secret, filters ?? {})))
+        response.end(JSON.stringify(await fetchDataset('1272000000000100018', secret, filters ?? {}, signal)))
       }
     } catch (error) {
+      if (clientAbort.signal.aborted || response.writableEnded) return true
       response.statusCode = 502
       response.end(JSON.stringify({ message: error instanceof Error ? error.message : '无法连接 BI 接口' }))
     }

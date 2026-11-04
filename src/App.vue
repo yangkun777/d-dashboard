@@ -55,11 +55,11 @@ onBeforeUnmount(() => {
     <aside v-if="!fullscreen" class="sidebar">
       <button class="brand" type="button" aria-label="返回运营总览" @click="router.push('/')">
         <img class="brand-mark" src="/favicon.ico?v=2" alt="" />
-        <span v-if="!collapsed" class="brand-name">DEGSON <small>技术支持中心</small></span>
+        <span v-if="!collapsed" class="brand-name">DEGSON <small>高松技术支持中心</small></span>
       </button>
       <div class="nav-section-label" v-if="!collapsed">工作空间</div>
       <nav class="nav-list" aria-label="主菜单">
-        <button v-for="item in menuItems" :key="item.path" class="nav-item" :class="{ active: active === item.path }" @click="router.push(item.path)" :title="item.label">
+        <button v-for="item in menuItems" :key="item.path" class="nav-item" :class="{ active: active === item.path }" :aria-current="active === item.path ? 'page' : undefined" @click="router.push(item.path)" :title="item.label">
           <el-icon :size="20"><DataAnalysis v-if="item.path === '/'"/><Histogram v-else-if="item.path === '/ranking'"/><User v-else-if="item.path === '/efficiency'"/><Document v-else-if="item.path === '/orders'"/><PieChart v-else/></el-icon><span v-if="!collapsed">{{ item.label }}</span><i v-if="active === item.path && !collapsed" class="active-indicator"></i>
         </button>
       </nav>

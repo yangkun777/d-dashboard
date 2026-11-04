@@ -8,6 +8,7 @@ const props = defineProps<{ option: EChartsOption }>()
 const root = ref<HTMLElement | null>(null)
 let chart: echarts.ECharts | undefined
 let observer: ResizeObserver | undefined
+let renderFrame: number | undefined
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
 
 const darkColors: Record<string, string> = {
@@ -37,16 +38,38 @@ function setOption(option: EChartsOption) {
   chart?.setOption(animatedOption, true)
 }
 
+function resizeToContainer() {
+  if (!root.value || !chart) return
+  const { clientWidth: width, clientHeight: height } = root.value
+  if (width > 0 && height > 0 && (width !== chart.getWidth() || height !== chart.getHeight())) {
+    chart.resize({ width, height })
+  }
+}
+
+function scheduleRender() {
+  if (renderFrame !== undefined) window.cancelAnimationFrame(renderFrame)
+  renderFrame = window.requestAnimationFrame(() => {
+    renderFrame = undefined
+    // Ranking data can change the scroll canvas height. Finish that resize
+    // before applying data so it cannot cancel the new series animation.
+    resizeToContainer()
+    setOption(props.option)
+  })
+}
+
 onMounted(() => {
   if (!root.value) return
   chart = echarts.init(root.value)
-  setOption(props.option)
-  observer = new ResizeObserver(() => chart?.resize())
+  scheduleRender()
+  observer = new ResizeObserver(() => {
+    if (renderFrame === undefined) resizeToContainer()
+  })
   observer.observe(root.value)
 })
-watch(isDark, () => setOption(props.option))
-watch(() => props.option, setOption, { deep: true })
+watch(isDark, scheduleRender, { flush: 'post' })
+watch(() => props.option, scheduleRender, { deep: true, flush: 'post' })
 onBeforeUnmount(() => {
+  if (renderFrame !== undefined) window.cancelAnimationFrame(renderFrame)
   observer?.disconnect()
   chart?.dispose()
 })

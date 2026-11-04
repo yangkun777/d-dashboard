@@ -1,6 +1,7 @@
 ﻿param(
     [ValidateSet('start', 'stop')]
-    [string]$Action = 'start'
+    [string]$Action = 'start',
+    [switch]$Lan
 )
 
 $ErrorActionPreference = 'Stop'
@@ -13,6 +14,7 @@ $nginxConfig = Join-Path $nginxHome 'conf/local.conf'
 $apiPidFile = Join-Path $localRoot 'api.pid'
 $apiPort = 3001
 $sitePort = 8080
+$listenAddress = if ($Lan) { '0.0.0.0' } else { '127.0.0.1' }
 
 function Stop-LocalDeployment {
     if (Test-Path $nginxExe) {
@@ -64,7 +66,7 @@ http {
     include mime.types;
     default_type application/octet-stream;
     server {
-        listen 127.0.0.1:__SITE_PORT__;
+        listen __LISTEN_ADDRESS__:__SITE_PORT__;
         server_name localhost;
         root "__DIST_ROOT__";
         index index.html;
@@ -77,7 +79,7 @@ http {
     }
 }
 '@
-$configText = $configText.Replace('__SITE_PORT__', "$sitePort").Replace('__API_PORT__', "$apiPort").Replace('__DIST_ROOT__', $distRoot)
+$configText = $configText.Replace('__LISTEN_ADDRESS__', $listenAddress).Replace('__SITE_PORT__', "$sitePort").Replace('__API_PORT__', "$apiPort").Replace('__DIST_ROOT__', $distRoot)
 Set-Content -LiteralPath $nginxConfig -Value $configText -Encoding ascii
 $nginxPrefix = $nginxHome.Replace('\', '/') + '/'
 & $nginxExe -p $nginxPrefix -c 'conf/local.conf' -t
@@ -107,7 +109,15 @@ try {
         } catch { Start-Sleep -Milliseconds 200 }
     }
     if (-not $siteReady) { throw 'Nginx 未能启动，请查看 .local-deploy/nginx-*/logs/error.log' }
-    Write-Host "本机部署演练已启动：http://127.0.0.1:$sitePort/"
+    Write-Host "本机部署已启动：http://127.0.0.1:$sitePort/"
+    if ($Lan) {
+        $lanAddresses = Get-NetIPAddress -AddressFamily IPv4 | Where-Object {
+            $_.IPAddress -notlike '127.*' -and $_.InterfaceAlias -notlike 'VMware*' -and $_.InterfaceAlias -notlike 'Clash*'
+        }
+        foreach ($address in $lanAddresses) {
+            Write-Host "同事访问：http://$($address.IPAddress):$sitePort/  （$($address.InterfaceAlias)）"
+        }
+    }
     Write-Host "停止命令：powershell -ExecutionPolicy Bypass -File deploy/local-windows.ps1 -Action stop"
 } catch {
     Stop-LocalDeployment

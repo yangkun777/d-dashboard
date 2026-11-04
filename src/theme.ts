@@ -4,16 +4,18 @@ function readTheme(): boolean {
   try { return localStorage.getItem('degson.theme') === 'dark' } catch { return false }
 }
 export const isDark = ref(readTheme())
-let transitionTimer: number | undefined
-let initialized = false
+let transitionFrame: number | undefined
 watch(isDark, value => {
-  if (initialized && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    document.documentElement.classList.add('theme-transitioning')
-    window.clearTimeout(transitionTimer)
-    transitionTimer = window.setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 700)
-  }
+  if (transitionFrame !== undefined) window.cancelAnimationFrame(transitionFrame)
+  document.documentElement.classList.add('theme-transitioning')
+  // Suppress component hover/focus transitions while applying the new palette.
+  void document.documentElement.offsetHeight
   document.documentElement.dataset.theme = value ? 'dark' : 'light'
   document.documentElement.style.colorScheme = value ? 'dark' : 'light'
+  void document.documentElement.offsetHeight
+  transitionFrame = window.requestAnimationFrame(() => {
+    document.documentElement.classList.remove('theme-transitioning')
+    transitionFrame = undefined
+  })
   try { localStorage.setItem('degson.theme', value ? 'dark' : 'light') } catch { /* Optional storage. */ }
-  initialized = true
 }, { immediate: true })

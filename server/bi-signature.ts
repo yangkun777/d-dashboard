@@ -18,8 +18,9 @@ export function createBiSignature(body: Record<string, unknown>, secret: string)
   }
 }
 
-export async function readBiSignatureSecret(sharePageUrl: string): Promise<string> {
-  const response = await fetch(sharePageUrl, { signal: AbortSignal.timeout(12000) })
+export async function readBiSignatureSecret(sharePageUrl: string, signal?: AbortSignal): Promise<string> {
+  const timeout = AbortSignal.timeout(12000)
+  const response = await fetch(sharePageUrl, { signal: signal ? AbortSignal.any([signal, timeout]) : timeout })
   if (!response.ok) throw new Error(`无法读取 BI 分享页（HTTP ${response.status}）`)
   const html = await response.text()
   const secret = html.match(/signatureSecret\s*:\s*'([^']+)'/)?.[1]

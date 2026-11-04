@@ -47,6 +47,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\deploy\local-windows.ps1 -
 powershell -NoProfile -ExecutionPolicy Bypass -File .\deploy\local-windows.ps1 -Action stop
 ```
 
+供同事通过局域网访问时，启动命令增加 `-Lan`：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\deploy\local-windows.ps1 -Action start -Lan
+```
+
+Nginx 在 `8080` 端口提供构建后的 `dist/`，并同源代理 BI 接口；Node API 仍仅绑定本机 `127.0.0.1:3001`。首次需在管理员 PowerShell 运行 `deploy/allow-lan-windows.ps1`（默认网卡名称为“以太网”），只允许指定网卡、同网段访问本项目 Nginx 的 TCP 8080。网卡名称不同时通过 `-InterfaceAlias` 指定。
+
+2026-11-02 本机访问地址为 `http://192.168.24.146:8080/`。IP 变化后以 Windows 以太网实际 IPv4 地址为准，不使用 VMware 虚拟网卡地址。电脑需要保持开机和服务运行；重启后重新运行启动命令。更新版本前先停止部署，再启动，避免占用端口。
+
 再次演练前先运行 `stop`，再运行 `start`。Windows 版 Nginx 仅用于本机熟悉流程；正式服务器仍推荐 Linux 版 Nginx。
 
 ## 生产部署建议（Linux + Nginx）
