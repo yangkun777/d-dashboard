@@ -13,10 +13,17 @@ export interface OverviewData {
   categories: Array<{ name: string; value: number }>
   products: Array<{ name: string; value: number }>
   urgency: Array<{ name: string; value: number }>
+  alert: {
+    pendingOrders: number
+    pendingHours: number
+    headcount: number
+    threshold: number
+    triggered: boolean
+  }
 }
 
 interface DatasetResult { data?: Array<Record<string, unknown>> }
-interface OverviewResponse { datasets?: Record<string, DatasetResult>; message?: string }
+interface OverviewResponse { datasets?: Record<string, DatasetResult>; alert?: DatasetResult; message?: string }
 
 const id = (n: number) => `127200000000010${String(n).padStart(4, '0')}`
 
@@ -46,6 +53,15 @@ export async function getOverviewData(signal?: AbortSignal): Promise<OverviewDat
     return row ? number(row.value) : 0
   }
 
+  const alertRow = payload.alert?.data?.[0] ?? {}
+  const alert = {
+    pendingOrders: number(alertRow['待处理工单'] ?? 0),
+    pendingHours: number(alertRow['待处理工时'] ?? 0),
+    headcount: number(alertRow['人数'] ?? 0),
+    threshold: number(alertRow['阈值'] ?? 0),
+    triggered: Number(alertRow['预警'] ?? 0) === 1,
+  }
+
   return {
     metrics: {
       totalOrders: scalar(1), totalGrowth: scalar(2),
@@ -55,5 +71,6 @@ export async function getOverviewData(signal?: AbortSignal): Promise<OverviewDat
     },
     flow: names.map(name => ({ name, pending: flowValue(name, '待处理'), completed: flowValue(name, '完成'), net: flowValue(name, '净增') })),
     categories: pairs(10), products: pairs(11), urgency: pairs(12),
+    alert,
   }
 }

@@ -8,6 +8,7 @@ export interface BiGatewayOptions {
 }
 
 const overviewDatasetIds = Array.from({ length: 12 }, (_, index) => `127200000000010${String(index + 1).padStart(4, '0')}`)
+const overviewAlertDatasetId = '1272000000000103001'
 const productDatasetIds = Array.from({ length: 6 }, (_, index) => `127200000000010${String(index + 19).padStart(4, '0')}`)
 const rankingDatasetIds = ['1272000000000100013', '1272000000000100014', '1272000000000100026', '1272000000000100027']
 const orderFilterKeys = ['dateStart', 'dateEnd', 'handler', 'status', 'category', 'keyword'] as const
@@ -109,8 +110,11 @@ export function createBiGateway(options: BiGatewayOptions = {}) {
       const secret = await getSecret(clientAbort.signal)
       const signal = clientAbort.signal
       if (path === '/api/bi/overview') {
-        const datasets = await Promise.all(overviewDatasetIds.map(async id => [id, await fetchDataset(id, secret, {}, signal)] as const))
-        response.end(JSON.stringify({ datasets: Object.fromEntries(datasets) }))
+        const [datasets, alert] = await Promise.all([
+          Promise.all(overviewDatasetIds.map(async id => [id, await fetchDataset(id, secret, {}, signal)] as const)).then(Object.fromEntries),
+          fetchDataset(overviewAlertDatasetId, secret, {}, signal),
+        ])
+        response.end(JSON.stringify({ datasets, alert }))
       } else if (path === '/api/bi/products') {
         const datasets = await Promise.all(productDatasetIds.map(async id => [id, await fetchDataset(id, secret, {}, signal)] as const))
         response.end(JSON.stringify({ datasets: Object.fromEntries(datasets) }))

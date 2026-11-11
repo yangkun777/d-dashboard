@@ -38,10 +38,11 @@ const formatChange = (value: number) => `${value < 0 ? '↘' : '↗'} ${formatNu
 const metrics = computed(() => {
   const data = overview.value?.metrics
   if (!data) return []
+  const alertTriggered = overview.value?.alert?.triggered ?? false
   return [
     { title: '本月工单总量', value: formatNumber(data.totalOrders), unit: '单', change: data.totalGrowth, icon: Tickets, tone: 'purple' },
     { title: '日均工单量', value: formatNumber(data.dailyAverage, 1), unit: '单', change: data.dailyGrowth, icon: TrendCharts, tone: 'gold' },
-    { title: '待处理工单数', value: formatNumber(data.pendingOrders), unit: '单', change: data.pendingGrowth, icon: Warning, tone: 'pink', lowerIsBetter: true },
+    { title: '待处理工单数', value: formatNumber(data.pendingOrders), unit: '单', change: data.pendingGrowth, icon: Warning, tone: 'pink', lowerIsBetter: true, alert: alertTriggered },
     { title: '本月预计总工时', value: formatNumber(data.expectedHours), unit: 'h', change: data.hoursGrowth, icon: Timer, tone: 'teal' },
   ]
 })
@@ -101,7 +102,7 @@ const urgentPercent = computed(() => {
     <div v-if="error" class="data-error" role="status" aria-live="polite"><div><strong>{{ lastUpdated ? '刷新失败，已保留上次成功加载的数据' : '数据加载失败' }}</strong><span class="refresh-error-detail">{{ error }}</span><span v-if="lastUpdated" class="refresh-stale-note">当前内容为上次成功加载的数据，可能不是最新结果，请重试。</span></div><el-button link type="primary" @click="refresh">重试</el-button></div>
     <template v-if="overview">
       <section class="metric-grid">
-        <div v-for="metric in metrics" :key="metric.title" class="metric-card" :class="metric.tone">
+        <div v-for="metric in metrics" :key="metric.title" class="metric-card" :class="[metric.tone, { 'metric-alert': metric.alert }]">
           <div class="metric-head"><span>{{ metric.title }}</span><span class="metric-icon"><el-icon :size="20"><component :is="metric.icon" /></el-icon></span></div>
           <div class="metric-value">{{ metric.value }}<small>{{ metric.unit }}</small></div>
           <div class="metric-footer"><span class="trend-pill" :class="{ negative: metric.lowerIsBetter ? metric.change > 0 : metric.change < 0 }">{{ formatChange(metric.change) }}</span><span>较上期变化</span></div>
