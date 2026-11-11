@@ -14,10 +14,10 @@ const lastUpdated = ref('')
 let timer: number | undefined
 
 const charts = computed(() => [
-  { title: '国内 · 业务需求总工单排行', subtitle: '处理工单数 / 单', color: colors.purple, items: ranking.value.domesticOrders },
+  { title: '国内 · 业务需求总工单排行', subtitle: '处理工单数 / 单', color: colors.cyan, items: ranking.value.domesticOrders },
   { title: '国内 · 业务需求总工时排行', subtitle: '累计工时 / h', color: colors.cyan, items: ranking.value.domesticHours },
-  { title: '国际 · 业务需求总工单排行', subtitle: '处理工单数 / 单', color: colors.blue, items: ranking.value.internationalOrders },
-  { title: '国际 · 业务需求总工时排行', subtitle: '累计工时 / h', color: colors.pink, items: ranking.value.internationalHours },
+  { title: '国际 · 业务需求总工单排行', subtitle: '处理工单数 / 单', color: colors.purple, items: ranking.value.internationalOrders },
+  { title: '国际 · 业务需求总工时排行', subtitle: '累计工时 / h', color: colors.purple, items: ranking.value.internationalHours },
 ])
 
 const { refresh, dispose, isCurrent } = useSlowRefresh(async signal => {
@@ -48,7 +48,7 @@ onBeforeUnmount(() => { dispose(); if (timer) window.clearInterval(timer) })
       <div v-for="chart in charts" :key="chart.title" v-loading="loading && !lastUpdated" class="chart-panel ranking-panel">
         <div class="panel-header"><div><h2>{{ chart.title }}</h2><p>{{ chart.subtitle }}<span v-if="chart.items.length > 10"> · 向下滚动查看全部人员</span></p></div><span v-if="chart.items.length" class="panel-tag">{{ chart.items.length }} 人</span></div>
         <DataEmpty v-if="lastUpdated && !chart.items.some(item => item.value > 0)" />
-        <div v-else class="ranking-chart-scroll" :tabindex="chart.items.length > 10 ? 0 : -1" role="region" :aria-label="`${chart.title}，共 ${chart.items.length} 人`">
+        <div v-else class="ranking-chart-scroll" data-auto-scroll :tabindex="chart.items.length > 10 ? 0 : -1" role="region" :aria-label="`${chart.title}，共 ${chart.items.length} 人`">
           <div class="ranking-chart-inner" :style="{ height: chart.items.length > 10 ? `${chart.items.length * 32 + 48}px` : '100%' }">
             <EChart :option="horizontalBars(chart.items.map(item => item.name), chart.items.map(item => item.value), chart.color)" />
           </div>

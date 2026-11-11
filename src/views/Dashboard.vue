@@ -40,25 +40,28 @@ const metrics = computed(() => {
   if (!data) return []
   return [
     { title: '本月工单总量', value: formatNumber(data.totalOrders), unit: '单', change: data.totalGrowth, icon: Tickets, tone: 'purple' },
-    { title: '日均工单量', value: formatNumber(data.dailyAverage, 1), unit: '单', change: data.dailyGrowth, icon: TrendCharts, tone: 'blue' },
+    { title: '日均工单量', value: formatNumber(data.dailyAverage, 1), unit: '单', change: data.dailyGrowth, icon: TrendCharts, tone: 'gold' },
     { title: '待处理工单数', value: formatNumber(data.pendingOrders), unit: '单', change: data.pendingGrowth, icon: Warning, tone: 'pink', lowerIsBetter: true },
     { title: '本月预计总工时', value: formatNumber(data.expectedHours), unit: 'h', change: data.hoursGrowth, icon: Timer, tone: 'teal' },
   ]
 })
 
+const valueLabel = { show: true, position: 'top' as const, color: colors.text, fontSize: 11 }
 const volumeOption = computed<EChartsOption>(() => {
-  const flow = (overview.value?.flow ?? []).filter(item => item.name !== '合计')
+  const flow = [...(overview.value?.flow ?? [])]
+  const totalIndex = flow.findIndex(item => item.name === '合计')
+  if (totalIndex > 0) flow.unshift(...flow.splice(totalIndex, 1))
   return {
     color: [colors.purple, colors.cyan, colors.gold],
     tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#DCE6EF', textStyle: { color: colors.text } },
     legend: { right: 12, top: 0, icon: 'roundRect', itemWidth: 10, itemHeight: 10, textStyle: { color: colors.muted, fontSize: 11 } },
-    grid: { left: 40, right: 17, top: 40, bottom: 30 },
+    grid: { left: 40, right: 17, top: 48, bottom: 30 },
     xAxis: { type: 'category', data: flow.map(item => item.name), axisLine: { lineStyle: { color: '#D9E1EA' } }, axisTick: { show: false }, axisLabel: { color: colors.muted, fontSize: 11 } },
     yAxis: { type: 'value', splitLine: { lineStyle: { color: '#E7EDF3' } }, axisLabel: { color: colors.muted, fontSize: 11 } },
     series: [
-      { name: '待处理', type: 'bar', barWidth: 14, data: flow.map(item => item.pending), itemStyle: { borderRadius: [3,3,0,0] } },
-      { name: '完成', type: 'bar', barWidth: 14, data: flow.map(item => item.completed), itemStyle: { borderRadius: [3,3,0,0] } },
-      { name: '净增', type: 'line', smooth: .3, symbolSize: 7, data: flow.map(item => item.net), lineStyle: { width: 3 }, itemStyle: { color: colors.gold } },
+      { name: '待处理', type: 'bar', barWidth: 14, data: flow.map(item => item.pending), itemStyle: { borderRadius: [3,3,0,0] }, label: valueLabel },
+      { name: '完成', type: 'bar', barWidth: 14, data: flow.map(item => item.completed), itemStyle: { borderRadius: [3,3,0,0] }, label: valueLabel },
+      { name: '净增', type: 'line', smooth: .3, symbolSize: 7, data: flow.map(item => item.net), lineStyle: { width: 3 }, itemStyle: { color: colors.gold }, label: valueLabel },
     ],
   }
 })
@@ -75,6 +78,12 @@ const urgencyOption = computed(() => {
   return donut(items, `${items.reduce((sum, item) => sum + item.value, 0)} 单`)
 })
 const categoryTotal = computed(() => overview.value?.categories.reduce((sum, item) => sum + item.value, 0) ?? 0)
+const topCategoryPercent = computed(() => {
+  const items = [...(overview.value?.categories ?? [])].sort((a, b) => b.value - a.value)
+  if (!categoryTotal.value) return '0%'
+  const topThree = items.slice(0, 3).reduce((sum, item) => sum + item.value, 0)
+  return `${Math.round(topThree / categoryTotal.value * 100)}%`
+})
 const hasCategoryData = computed(() => overview.value?.categories.some(item => item.value > 0) ?? false)
 const urgentPercent = computed(() => {
   const items = overview.value?.urgency ?? []
@@ -100,7 +109,7 @@ const urgentPercent = computed(() => {
       </section>
       <section class="overview-charts">
         <div class="chart-panel flow-panel"><div class="panel-header"><div><h2>工单流量</h2><p>按处理人统计的工单进度</p></div><span class="panel-tag">{{ overview.flow.filter(item => item.name !== '合计').length }} 位处理人</span></div><EChart :option="volumeOption" /></div>
-        <div class="chart-panel category-panel"><div class="panel-header"><div><h2>事项分布</h2><p>当前工单分类</p></div><span class="panel-tag">共 {{ categoryTotal }} 项</span></div><EChart v-if="hasCategoryData" :option="categoryOption" /><DataEmpty v-else /></div>
+        <div class="chart-panel category-panel"><div class="panel-header"><div><h2>事项分布</h2><p>当前工单分类</p></div><span class="panel-tag">共 {{ categoryTotal }} 项</span></div><EChart v-if="hasCategoryData" :option="categoryOption" /><DataEmpty v-else /><div v-if="hasCategoryData" class="category-footnote"><span>合计：{{ categoryTotal }} 项</span><span>前3类占比：{{ topCategoryPercent }}</span></div></div>
         <div class="chart-panel donut-panel"><div class="panel-header"><div><h2>各产品线工单分布</h2><p>不同事业部占比</p></div></div><EChart :option="productOption" /></div>
         <div class="chart-panel donut-panel"><div class="panel-header"><div><h2>紧急程度</h2><p>按工单优先级统计</p></div><span class="panel-tag">紧急 {{ urgentPercent }}</span></div><EChart :option="urgencyOption" /></div>
       </section>

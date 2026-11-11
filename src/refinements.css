@@ -16,6 +16,8 @@
 .panel-header h2 { font-weight: 700; line-height: 1.5; }
 .panel-header p { color: #6c8194; }
 .panel-tag { font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.category-footnote { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+.category-footnote span { padding: 3px 8px; border-radius: 6px; background: #287cb9; color: #fff; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .metric-card,.chart-panel { box-shadow: 0 2px 8px rgba(30,64,95,.035); }
 .chart-panel:hover { transform: none; box-shadow: 0 2px 8px rgba(30,64,95,.035); }
 .metric-card:hover { transform: none; box-shadow: 0 4px 14px rgba(30,64,95,.065); }

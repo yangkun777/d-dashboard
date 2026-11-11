@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import EChart from '../components/EChart.vue'
 import DataEmpty from '../components/DataEmpty.vue'
-import { colors, horizontalBars } from '../charts'
+import { horizontalBars } from '../charts'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { getEfficiencyData, type EfficiencyChartItem, type EfficiencyRow } from '../api/efficiency'
@@ -16,10 +16,16 @@ const error = ref('')
 const lastUpdated = ref('')
 let timer: number | undefined
 const rowClassName = ({ row }: { row: EfficiencyRow }) => row.isTotal ? 'summary-row' : ''
+const personPalette = ['#3985D7', '#27B7A6', '#E5AE56', '#E07A4C', '#7B6FD6', '#5BAE6A', '#E18A9A', '#4AA3C7', '#C46BB0', '#8C7AE6', '#D4A24C', '#6A8FBF']
+const personColor = computed(() => {
+  const names = [...new Set([...hourItems.value.map(item => item.name), ...orderItems.value.map(item => item.name)])]
+  return new Map(names.map((name, index) => [name, personPalette[index % personPalette.length]]))
+})
+const barColors = (items: EfficiencyChartItem[]) => items.map(item => personColor.value.get(item.name) ?? personPalette[0])
 const hourTotal = computed(() => hourItems.value.reduce((sum, item) => sum + item.value, 0))
 const orderTotal = computed(() => orderItems.value.reduce((sum, item) => sum + item.value, 0))
-const hourOption = computed(() => horizontalBars(hourItems.value.map(item => item.name), hourItems.value.map(item => item.value), colors.purple))
-const orderOption = computed(() => horizontalBars(orderItems.value.map(item => item.name), orderItems.value.map(item => item.value), colors.cyan))
+const hourOption = computed(() => horizontalBars(hourItems.value.map(item => item.name), hourItems.value.map(item => item.value), barColors(hourItems.value)))
+const orderOption = computed(() => horizontalBars(orderItems.value.map(item => item.name), orderItems.value.map(item => item.value), barColors(orderItems.value)))
 
 const { refresh, dispose, isCurrent } = useSlowRefresh(async signal => {
   loading.value = true

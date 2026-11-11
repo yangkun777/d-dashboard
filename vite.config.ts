@@ -21,4 +21,5 @@ function biBridge(mode: string): Plugin {
 
 export default defineConfig(({ mode }) => ({
   plugins: [vue(), biBridge(mode)],
+  server: { host: true, port: 5173 },
 }))

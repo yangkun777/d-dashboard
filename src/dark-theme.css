@@ -44,6 +44,7 @@
 [data-theme="dark"] .page-heading p,[data-theme="dark"] .panel-header p,[data-theme="dark"] .filter-field label,[data-theme="dark"] .metric-title,[data-theme="dark"] .table-footer,[data-theme="dark"] .table-mode-toggle { color: #91afc5; }
 [data-theme="dark"] .eyebrow,[data-theme="dark"] .order-copy-button { color: #65c6ed; }
 [data-theme="dark"] .date-chip,[data-theme="dark"] .panel-tag,[data-theme="dark"] .refresh-button,[data-theme="dark"] .fullscreen-button { background: #173147; border-color: #2b4c65; color: #9bd9f3; }
+[data-theme="dark"] .category-footnote span { background: #1d6f9a; color: #e7f6ff; }
 [data-theme="dark"] .dark-table { --el-table-bg-color:#102338; --el-table-tr-bg-color:#102338; --el-table-header-bg-color:#19344c; --el-table-row-hover-bg-color:#1c3c53; --el-table-border-color:#294257; --el-table-text-color:#bdd3e4; --el-table-header-text-color:#b6d9ef; }
 [data-theme="dark"] .dark-table .el-table__header .cell { color: #b6d9ef; }
 [data-theme="dark"] .dark-table .el-table__cell { border-bottom-color: #233d52; }
