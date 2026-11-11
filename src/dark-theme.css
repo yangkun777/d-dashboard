@@ -98,6 +98,8 @@
 [data-theme="dark"] .dark-table .el-table__body tr:hover > td.el-table__cell,
 [data-theme="dark"] .dark-table .el-table__body tr.hover-row > td.el-table__cell { background: #1c3c53; }
 [data-theme="dark"] .efficiency-table-panel .summary-row td { background: #1c3d54 !important; color: #b8e8fa; }
+[data-theme="dark"] .orders-table-panel .order-row-warn td.el-table__cell { background-color: rgba(150,90,20,.38) !important; background-image: repeating-linear-gradient(135deg,rgba(255,170,60,.22) 0 4px,rgba(255,170,60,0) 4px 9px); }
+[data-theme="dark"] .orders-table-panel .order-row-danger td.el-table__cell { background-color: rgba(150,40,44,.40) !important; background-image: repeating-linear-gradient(135deg,rgba(255,90,90,.22) 0 4px,rgba(255,90,90,0) 4px 9px); }
 [data-theme="dark"] .efficiency-table-panel .el-loading-mask { background: rgba(10,28,44,.85); }
 [data-theme="dark"] .number-emphasis { color: #69c9f1; }
 [data-theme="dark"] .el-input__wrapper,

@@ -120,6 +120,9 @@ button:focus-visible, .el-select:focus-visible, .el-input:focus-visible { outlin
 .status-badge.progress { background: #e8f3ff; color: #347fbf; }
 .status-badge.done { background: #e4f6ef; color: #24886d; }
 .dark-table { --el-table-bg-color: #fff; --el-table-tr-bg-color: #fff; --el-table-header-bg-color: #f2f7fb; --el-table-row-hover-bg-color: #eaf4fc; --el-table-border-color: #e8eef4; --el-table-text-color: #40536a; --el-table-header-text-color: #60768f; --el-fill-color-lighter: #f8fbfe; background: #fff !important; }
+.orders-table-panel .order-row-warn td { background-color: #fff4e3 !important; background-image: repeating-linear-gradient(135deg,rgba(240,150,30,.30) 0 4px,rgba(240,150,30,0) 4px 9px); }
+.orders-table-panel .order-row-danger td { background-color: #fde3e3 !important; background-image: repeating-linear-gradient(135deg,rgba(224,60,60,.30) 0 4px,rgba(224,60,60,0) 4px 9px); }
+.orders-table-panel .order-row-warn td.el-table__cell:hover, .orders-table-panel .order-row-danger td.el-table__cell:hover { background-color: inherit !important; }
 .el-input__wrapper,.el-select__wrapper,.el-range-editor.el-input__wrapper { background: #fff !important; box-shadow: 0 0 0 1px #dce6ef inset !important; }
 .el-input__inner,.el-select__selected-item,.el-range-input { color: #354961 !important; }
 .el-input__inner::placeholder,.el-range-input::placeholder { color: #a8b4c1 !important; }

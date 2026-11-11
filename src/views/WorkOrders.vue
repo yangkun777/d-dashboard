@@ -56,6 +56,17 @@ const handlerOptions = ref<string[]>([])
 const statusOptions = ref<string[]>([])
 const categoryOptions = ref<string[]>([])
 const selected = ref<OrderRow | null>(null)
+// 进行中的工单按工时预警：>=16h 橙色底纹，>24h（3 天）红色底纹
+const HOURS_WARN = 16
+const HOURS_DANGER = 24
+const orderRowClassName = ({ row }: { row: OrderRow }) => {
+  if (row.status !== '进行') return ''
+  const hours = Number.parseFloat(row.hours)
+  if (!Number.isFinite(hours)) return ''
+  if (hours > HOURS_DANGER) return 'order-row-danger'
+  if (hours >= HOURS_WARN) return 'order-row-warn'
+  return ''
+}
 const dialogOpen = computed({ get: () => selected.value !== null, set: value => { if (!value) selected.value = null } })
 const pageRows = computed(() => rows.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
 const displayRows = computed(() => {
@@ -193,7 +204,7 @@ onBeforeUnmount(() => { dispose(); stopAutoScroll(); if (timer) window.clearInte
     <div v-if="error" class="data-error" role="status" aria-live="polite"><div><strong>{{ lastUpdated ? '刷新失败，已保留上次成功加载的数据' : '数据加载失败' }}</strong><span class="refresh-error-detail">{{ error }}</span><span v-if="lastUpdated" class="refresh-stale-note">当前列表为最后一次成功查询的结果，可能与当前筛选条件不同，请重试。</span></div><el-button link type="primary" @click="query">重试</el-button></div>
     <section class="chart-panel orders-table-panel">
       <div class="panel-header"><div><h2>工单列表</h2><p>{{ autoScroll ? '循环展示当前筛选结果 · 鼠标移入暂停' : '符合筛选条件的工单 · 左右滚动查看全部字段 · 每 10 分钟更新' }}</p></div><div class="orders-table-actions"><el-popover placement="bottom-end" :width="320" trigger="click"><template #reference><el-button plain><el-icon><Setting /></el-icon>显示列</el-button></template><div class="column-picker"><div class="column-picker-heading"><strong>选择显示字段</strong><el-button link type="primary" @click="visibleColumns = [...allColumnKeys]">恢复全部</el-button></div><p>工单编号始终显示，设置自动保存在本机</p><el-checkbox-group v-model="visibleColumns"><el-checkbox v-for="column in columnOptions" :key="column.key" :value="column.key" :disabled="column.key === 'id'">{{ column.label }}</el-checkbox></el-checkbox-group></div></el-popover><div class="table-mode-toggle"><span>自动滚动</span><el-switch v-model="autoScroll" aria-label="自动滚动" /></div><el-button type="primary" plain :disabled="loading || !rows.length" @click="exportExcel"><el-icon><Download /></el-icon>导出 Excel</el-button></div></div>
-      <div ref="tableWrap" class="table-wrap" @mouseenter="scrollPaused = true" @mouseleave="scrollPaused = false"><el-table v-loading="loading && !lastUpdated" :data="displayRows" class="dark-table" max-height="560" stripe empty-text="暂无符合条件的工单" @row-click="selected = $event">
+      <div ref="tableWrap" class="table-wrap" @mouseenter="scrollPaused = true" @mouseleave="scrollPaused = false"><el-table v-loading="loading && !lastUpdated" :data="displayRows" class="dark-table" max-height="560" stripe empty-text="暂无符合条件的工单" :row-class-name="orderRowClassName" @row-click="selected = $event">
         <el-table-column v-if="visibleColumns.includes('id')" prop="id" label="工单编号" width="185" fixed><template #default="scope"><button type="button" class="order-copy-button" :aria-label="`复制工单编号 ${scope.row.id}`" title="点击复制工单编号" @click.stop="copyOrderId(scope.row.id)">{{ scope.row.id }}<el-icon><CopyDocument /></el-icon></button></template></el-table-column>
         <el-table-column v-if="visibleColumns.includes('handler')" prop="handler" label="办理人" width="100"/><el-table-column v-if="visibleColumns.includes('region')" prop="region" label="区域" width="110"/><el-table-column v-if="visibleColumns.includes('name')" prop="name" label="工单名称" width="155"/><el-table-column v-if="visibleColumns.includes('applicant')" prop="applicant" label="申请人" width="105"/><el-table-column v-if="visibleColumns.includes('date')" prop="date" label="申请日期" width="125"/>
         <el-table-column v-if="visibleColumns.includes('customerCode')" prop="customerCode" label="客户代码" width="110"/><el-table-column v-if="visibleColumns.includes('salesforceNo')" prop="salesforceNo" label="SF商机号" width="120"/><el-table-column v-if="visibleColumns.includes('product')" prop="product" label="产品名称" width="130"/><el-table-column v-if="visibleColumns.includes('division')" prop="division" label="产品所属事业部" width="140"/><el-table-column v-if="visibleColumns.includes('category')" prop="category" label="事项分类" width="150"/>
