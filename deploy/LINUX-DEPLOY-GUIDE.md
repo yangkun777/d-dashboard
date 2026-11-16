@@ -76,7 +76,7 @@ curl -I --max-time 10 http://10.10.10.205/jeecg-boot/drag/share/view/12720000000
 
 ## 3. 在 Windows 构建发布文件
 
-在 Windows PowerShell 进入项目目录并构建：
+在 Window22s PowerShell 进入项目目录并构建：
 
 ```powershell
 cd D:\company-project

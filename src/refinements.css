@@ -16,8 +16,8 @@
 .panel-header h2 { font-weight: 700; line-height: 1.5; }
 .panel-header p { color: #6c8194; }
 .panel-tag { font-variant-numeric: tabular-nums; flex-shrink: 0; }
-.category-footnote { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
-.category-footnote span { padding: 3px 8px; border-radius: 6px; background: #287cb9; color: #fff; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.category-header-tags { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.orders-cell-tooltip { max-width: 50vw; overflow-wrap: anywhere; }
 .metric-card,.chart-panel { box-shadow: 0 2px 8px rgba(30,64,95,.035); }
 .chart-panel:hover { transform: none; box-shadow: 0 2px 8px rgba(30,64,95,.035); }
 .metric-card:hover { transform: none; box-shadow: 0 4px 14px rgba(30,64,95,.065); }
@@ -72,6 +72,16 @@
 .order-copy-button { display:inline-flex; align-items:center; gap:6px; max-width:100%; border:0; padding:3px 0; background:transparent; color:#287cb9; cursor:pointer; font-size:inherit; font-variant-numeric:tabular-nums; }
 .order-copy-button:hover { color:#175b8c; text-decoration:underline; }
 .order-copy-button .el-icon { flex-shrink:0; }
+.orders-table-panel .el-table .cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.orders-table-panel .el-table td.orders-full-column .cell { white-space: nowrap; text-overflow: ellipsis; }
+.orders-table-panel .el-table td.orders-full-column .status-badge { white-space: nowrap; text-overflow: ellipsis; }
+.orders-table-panel .status-badge { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+.orders-table-panel .order-copy-button { width: 100%; min-width: 0; }
+.orders-table-panel .order-copy-button span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.orders-table-panel .el-table td.orders-full-column .order-copy-button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.orders-table-panel .orders-product-text { display: block; white-space: nowrap; line-height: 1.45; }
+.orders-table-panel .orders-product-text.is-long { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.orders-table-panel .orders-salesforce-text { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .orders-table-actions { flex-wrap:wrap; }
 
 /* A short result set should not leave an empty full-screen table. */

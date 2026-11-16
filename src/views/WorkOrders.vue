@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Search, Refresh, Download, Setting, CopyDocument } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import * as XLSX from 'xlsx'
@@ -8,20 +8,10 @@ import { isRequestCancelled, useSlowRefresh } from '../api/slow-refresh'
 import DataEmpty from '../components/DataEmpty.vue'
 
 
-const columnOptions = [{"key": "id", "label": "工单编号"}, {"key": "handler", "label": "办理人"}, {"key": "region", "label": "区域"}, {"key": "name", "label": "工单名称"}, {"key": "applicant", "label": "申请人"}, {"key": "date", "label": "申请日期"}, {"key": "customerCode", "label": "客户代码"}, {"key": "salesforceNo", "label": "SF商机号"}, {"key": "product", "label": "产品名称"}, {"key": "division", "label": "产品所属事业部"}, {"key": "category", "label": "事项分类"}, {"key": "status", "label": "事项状态"}, {"key": "quantity", "label": "数量"}, {"key": "quantityType", "label": "数量分类"}, {"key": "hours", "label": "工时 (h)"}, {"key": "urgency", "label": "紧急程度"}, {"key": "schedule", "label": "档期排布"}, {"key": "resolutionDuration", "label": "解决时长"}]
-const columnStorageKey = 'degson.orders.columns.v1'
+const columnOptions = [{"key": "id", "label": "工单编号"}, {"key": "handler", "label": "办理人"}, {"key": "region", "label": "区域"}, {"key": "name", "label": "工单名称"}, {"key": "applicant", "label": "申请人"}, {"key": "date", "label": "申请日期"}, {"key": "customerCode", "label": "客户代码"}, {"key": "category", "label": "事项分类"}, {"key": "status", "label": "事项状态"}, {"key": "hours", "label": "工时 (h)"}, {"key": "schedule", "label": "档期排布"}, {"key": "salesforceNo", "label": "SF商机号"}, {"key": "product", "label": "产品名称"}, {"key": "division", "label": "产品所属事业部"}, {"key": "quantity", "label": "数量"}, {"key": "quantityType", "label": "数量分类"}, {"key": "urgency", "label": "紧急程度"}, {"key": "resolutionDuration", "label": "解决时长"}]
 const allColumnKeys = columnOptions.map(item => item.key)
-function readColumns(): string[] {
-  try {
-    const saved: unknown = JSON.parse(localStorage.getItem(columnStorageKey) || 'null')
-    if (Array.isArray(saved)) return [...new Set(['id', ...saved.filter((key): key is string => typeof key === 'string' && allColumnKeys.includes(key))])]
-  } catch { /* Storage may be unavailable; use all columns. */ }
-  return [...allColumnKeys]
-}
-const visibleColumns = ref(readColumns())
-watch(visibleColumns, value => {
-  try { localStorage.setItem(columnStorageKey, JSON.stringify(value)) } catch { /* Current selection remains usable. */ }
-}, { deep: true })
+const defaultColumnKeys = ['id', 'handler', 'region', 'name', 'applicant', 'date', 'category', 'status', 'hours', 'schedule', 'urgency']
+const visibleColumns = ref([...defaultColumnKeys])
 async function copyOrderId(id: string) {
   try {
     if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(id)
@@ -45,9 +35,25 @@ const category = ref<string | undefined>('')
 const keyword = ref<string | undefined>('')
 const page = ref(1)
 const pageSize = ref(10)
-const autoScroll = ref(false)
-const scrollPaused = ref(false)
+const autoScroll = inject('dashboardFullscreen', ref(false))
 const tableWrap = ref<HTMLElement | null>(null)
+const tableHeight = ref(560)
+const tableWidth = ref(1600)
+const minimumColumnWidths: Record<string, number> = {
+  id: 170, handler: 90, region: 90, name: 145, applicant: 90, date: 115,
+  customerCode: 105, category: 135, status: 140, hours: 80, schedule: 115,
+  salesforceNo: 120, product: 130, division: 130, quantity: 70,
+  quantityType: 100, urgency: 95, resolutionDuration: 95,
+}
+const columnWidth = (key: string) => {
+  const keys = columnOptions.filter(column => visibleColumns.value.includes(column.key))
+  const weight = (name: string) => name === 'id' ? 1.8 : name === 'status' ? 1.4 : 1
+  const totalWeight = keys.reduce((sum, column) => sum + weight(column.key), 0)
+  const isDefaultView = keys.length === defaultColumnKeys.length && defaultColumnKeys.every(name => visibleColumns.value.includes(name))
+  const availableWidth = Math.max(1, tableWidth.value - 24)
+  const fittedWidth = Math.max(1, Math.floor(availableWidth * weight(key) / totalWeight))
+  return isDefaultView ? fittedWidth : Math.max(minimumColumnWidths[key] ?? 80, fittedWidth)
+}
 const rows = ref<OrderRow[]>([])
 const loading = ref(false)
 const error = ref('')
@@ -87,6 +93,7 @@ const detailFields = computed(() => selected.value ? [
 ] : [])
 let timer: number | undefined
 let scrollTimer: number | undefined
+let tableResizeObserver: ResizeObserver | undefined
 
 function stopAutoScroll() {
   if (scrollTimer) window.clearInterval(scrollTimer)
@@ -104,7 +111,7 @@ function startAutoScroll() {
     const time = performance.now()
     const elapsed = Math.min(time - previousTime, 1000)
     previousTime = time
-    if (scrollPaused.value || loading.value || selected.value || document.hidden) return
+    if (loading.value || document.hidden) return
     const currentScroller = tableWrap.value?.querySelector<HTMLElement>('.el-scrollbar__wrap')
     const tableRows = currentScroller?.querySelectorAll<HTMLTableRowElement>('.el-table__body tbody tr')
     if (!currentScroller || !tableRows?.[rows.value.length]) return
@@ -181,8 +188,20 @@ function exportExcel() {
   XLSX.writeFile(workbook, '工单明细.xlsx')
 }
 
-onMounted(() => { void query(); timer = window.setInterval(() => void query(), 10 * 60 * 1000) })
-onBeforeUnmount(() => { dispose(); stopAutoScroll(); if (timer) window.clearInterval(timer) })
+onMounted(() => {
+  if (tableWrap.value) {
+    tableResizeObserver = new ResizeObserver(([entry]) => {
+      if (entry) {
+        tableHeight.value = Math.max(1, Math.floor(entry.contentRect.height))
+        tableWidth.value = Math.max(1, Math.floor(entry.contentRect.width))
+      }
+    })
+    tableResizeObserver.observe(tableWrap.value)
+  }
+  void query()
+  timer = window.setInterval(() => void query(), 10 * 60 * 1000)
+})
+onBeforeUnmount(() => { dispose(); stopAutoScroll(); tableResizeObserver?.disconnect(); if (timer) window.clearInterval(timer) })
 </script>
 
 <template>
@@ -203,16 +222,18 @@ onBeforeUnmount(() => { dispose(); stopAutoScroll(); if (timer) window.clearInte
     </section>
     <div v-if="error" class="data-error" role="status" aria-live="polite"><div><strong>{{ lastUpdated ? '刷新失败，已保留上次成功加载的数据' : '数据加载失败' }}</strong><span class="refresh-error-detail">{{ error }}</span><span v-if="lastUpdated" class="refresh-stale-note">当前列表为最后一次成功查询的结果，可能与当前筛选条件不同，请重试。</span></div><el-button link type="primary" @click="query">重试</el-button></div>
     <section class="chart-panel orders-table-panel">
-      <div class="panel-header"><div><h2>工单列表</h2><p>{{ autoScroll ? '循环展示当前筛选结果 · 鼠标移入暂停' : '符合筛选条件的工单 · 左右滚动查看全部字段 · 每 10 分钟更新' }}</p></div><div class="orders-table-actions"><el-popover placement="bottom-end" :width="320" trigger="click"><template #reference><el-button plain><el-icon><Setting /></el-icon>显示列</el-button></template><div class="column-picker"><div class="column-picker-heading"><strong>选择显示字段</strong><el-button link type="primary" @click="visibleColumns = [...allColumnKeys]">恢复全部</el-button></div><p>工单编号始终显示，设置自动保存在本机</p><el-checkbox-group v-model="visibleColumns"><el-checkbox v-for="column in columnOptions" :key="column.key" :value="column.key" :disabled="column.key === 'id'">{{ column.label }}</el-checkbox></el-checkbox-group></div></el-popover><div class="table-mode-toggle"><span>自动滚动</span><el-switch v-model="autoScroll" aria-label="自动滚动" /></div><el-button type="primary" plain :disabled="loading || !rows.length" @click="exportExcel"><el-icon><Download /></el-icon>导出 Excel</el-button></div></div>
-      <div ref="tableWrap" class="table-wrap" @mouseenter="scrollPaused = true" @mouseleave="scrollPaused = false"><el-table v-loading="loading && !lastUpdated" :data="displayRows" class="dark-table" max-height="560" stripe empty-text="暂无符合条件的工单" :row-class-name="orderRowClassName" @row-click="selected = $event">
-        <el-table-column v-if="visibleColumns.includes('id')" prop="id" label="工单编号" width="185" fixed><template #default="scope"><button type="button" class="order-copy-button" :aria-label="`复制工单编号 ${scope.row.id}`" title="点击复制工单编号" @click.stop="copyOrderId(scope.row.id)">{{ scope.row.id }}<el-icon><CopyDocument /></el-icon></button></template></el-table-column>
-        <el-table-column v-if="visibleColumns.includes('handler')" prop="handler" label="办理人" width="100"/><el-table-column v-if="visibleColumns.includes('region')" prop="region" label="区域" width="110"/><el-table-column v-if="visibleColumns.includes('name')" prop="name" label="工单名称" width="155"/><el-table-column v-if="visibleColumns.includes('applicant')" prop="applicant" label="申请人" width="105"/><el-table-column v-if="visibleColumns.includes('date')" prop="date" label="申请日期" width="125"/>
-        <el-table-column v-if="visibleColumns.includes('customerCode')" prop="customerCode" label="客户代码" width="110"/><el-table-column v-if="visibleColumns.includes('salesforceNo')" prop="salesforceNo" label="SF商机号" width="120"/><el-table-column v-if="visibleColumns.includes('product')" prop="product" label="产品名称" width="130"/><el-table-column v-if="visibleColumns.includes('division')" prop="division" label="产品所属事业部" width="140"/><el-table-column v-if="visibleColumns.includes('category')" prop="category" label="事项分类" width="150"/>
-        <el-table-column v-if="visibleColumns.includes('status')" prop="status" label="事项状态" width="110"><template #default="scope"><span class="status-badge" :class="['完成', '已完成'].includes(scope.row.status) ? 'done' : ['处理中', '处理'].includes(scope.row.status) ? 'progress' : 'pending'">{{ scope.row.status }}</span></template></el-table-column>
-        <el-table-column v-if="visibleColumns.includes('quantity')" prop="quantity" label="数量" width="85"/><el-table-column v-if="visibleColumns.includes('quantityType')" prop="quantityType" label="数量分类" width="105"/><el-table-column v-if="visibleColumns.includes('hours')" prop="hours" label="工时 (h)" width="95"/><el-table-column v-if="visibleColumns.includes('urgency')" prop="urgency" label="紧急程度" width="105"><template #default="scope"><span :class="{ 'urgent-text': scope.row.urgency === '紧急' }">{{ scope.row.urgency }}</span></template></el-table-column><el-table-column v-if="visibleColumns.includes('schedule')" prop="schedule" label="档期排布" width="125"/><el-table-column v-if="visibleColumns.includes('resolutionDuration')" prop="resolutionDuration" label="解决时长" width="105"/>
+      <div class="panel-header"><div><h2>工单列表</h2><p>{{ autoScroll ? '循环展示当前筛选结果' : '符合筛选条件的工单 · 鼠标移入可查看完整字段 · 每 10 分钟更新' }}</p></div><div class="orders-table-actions"><el-popover placement="bottom-end" :width="320" trigger="click"><template #reference><el-button plain><el-icon><Setting /></el-icon>显示列</el-button></template><div class="column-picker"><div class="column-picker-heading"><strong>选择显示字段</strong><el-button link type="primary" @click="visibleColumns = [...allColumnKeys]">恢复全部</el-button></div><el-checkbox-group v-model="visibleColumns"><el-checkbox v-for="column in columnOptions" :key="column.key" :value="column.key" :disabled="column.key === 'id'">{{ column.label }}</el-checkbox></el-checkbox-group></div></el-popover><el-button type="primary" plain :disabled="loading || !rows.length" @click="exportExcel"><el-icon><Download /></el-icon>导出 Excel</el-button></div></div>
+      <div ref="tableWrap" class="table-wrap"><el-table v-loading="loading && !lastUpdated" :data="displayRows" class="dark-table" :height="autoScroll ? tableHeight : undefined" :max-height="autoScroll ? tableHeight : 560" :show-overflow-tooltip="{ popperClass: 'orders-cell-tooltip', showAfter: 500 }" stripe empty-text="暂无符合条件的工单" :row-class-name="orderRowClassName" @row-click="selected = $event">
+        <el-table-column v-if="visibleColumns.includes('id')" prop="id" label="工单编号" :width="columnWidth('id')" class-name="orders-full-column"><template #default="scope"><button type="button" class="order-copy-button" :aria-label="`复制工单编号 ${scope.row.id}`" :title="scope.row.id" @click.stop="copyOrderId(scope.row.id)"><span>{{ scope.row.id }}</span><el-icon><CopyDocument /></el-icon></button></template></el-table-column>
+        <el-table-column v-if="visibleColumns.includes('handler')" prop="handler" label="办理人" :width="columnWidth('handler')" class-name="orders-full-column"/><el-table-column v-if="visibleColumns.includes('region')" prop="region" label="区域" :width="columnWidth('region')" class-name="orders-full-column"/><el-table-column v-if="visibleColumns.includes('name')" prop="name" label="工单名称" :width="columnWidth('name')" class-name="orders-full-column"/><el-table-column v-if="visibleColumns.includes('applicant')" prop="applicant" label="申请人" :width="columnWidth('applicant')" class-name="orders-full-column"/><el-table-column v-if="visibleColumns.includes('date')" prop="date" label="申请日期" :width="columnWidth('date')" class-name="orders-full-column"/>
+        <el-table-column v-if="visibleColumns.includes('customerCode')" prop="customerCode" label="客户代码" :width="columnWidth('customerCode')" class-name="orders-full-column"/><el-table-column v-if="visibleColumns.includes('category')" prop="category" label="事项分类" :width="columnWidth('category')" class-name="orders-full-column"/>
+        <el-table-column v-if="visibleColumns.includes('status')" prop="status" label="事项状态" :width="columnWidth('status')" class-name="orders-full-column"><template #default="scope"><span class="status-badge" :title="scope.row.status" :class="['完成', '已完成'].includes(scope.row.status) ? 'done' : ['处理中', '处理'].includes(scope.row.status) ? 'progress' : 'pending'">{{ scope.row.status }}</span></template></el-table-column>
+        <el-table-column v-if="visibleColumns.includes('hours')" prop="hours" label="工时 (h)" :width="columnWidth('hours')" class-name="orders-full-column"/><el-table-column v-if="visibleColumns.includes('schedule')" prop="schedule" label="档期排布" :width="columnWidth('schedule')" class-name="orders-full-column"/>
+        <el-table-column v-if="visibleColumns.includes('salesforceNo')" prop="salesforceNo" label="SF商机号" :width="columnWidth('salesforceNo')"><template #default="scope"><el-tooltip :content="String(scope.row.salesforceNo ?? '')" placement="top" :show-after="500" popper-class="orders-cell-tooltip"><span class="orders-salesforce-text">{{ scope.row.salesforceNo }}</span></el-tooltip></template></el-table-column><el-table-column v-if="visibleColumns.includes('product')" prop="product" label="产品名称" :width="columnWidth('product')"><template #default="scope"><el-tooltip :content="String(scope.row.product ?? '')" placement="top" :show-after="500" popper-class="orders-cell-tooltip"><span class="orders-product-text is-long">{{ scope.row.product }}</span></el-tooltip></template></el-table-column><el-table-column v-if="visibleColumns.includes('division')" prop="division" label="产品所属事业部" :width="columnWidth('division')" class-name="orders-full-column"/>
+        <el-table-column v-if="visibleColumns.includes('quantity')" prop="quantity" label="数量" :width="columnWidth('quantity')" class-name="orders-full-column"/><el-table-column v-if="visibleColumns.includes('quantityType')" prop="quantityType" label="数量分类" :width="columnWidth('quantityType')" class-name="orders-full-column"/><el-table-column v-if="visibleColumns.includes('urgency')" prop="urgency" label="紧急程度" :width="columnWidth('urgency')" class-name="orders-full-column"><template #default="scope"><span :class="{ 'urgent-text': scope.row.urgency === '紧急' }">{{ scope.row.urgency }}</span></template></el-table-column><el-table-column v-if="visibleColumns.includes('resolutionDuration')" prop="resolutionDuration" label="解决时长" :width="columnWidth('resolutionDuration')" class-name="orders-full-column"/>
         <template #empty><DataEmpty v-if="lastUpdated" /><span v-else>{{ error ? '数据加载失败' : '正在读取数据…' }}</span></template>
       </el-table></div>
-      <div class="table-footer"><span>共 {{ rows.length }} 条记录</span><span v-if="autoScroll" class="scroll-mode-note">{{ !rows.length ? '暂无可滚动的工单' : scrollPaused || selected ? '已暂停，移开鼠标后继续' : '循环滚动中' }}</span><el-pagination v-else v-model:current-page="page" v-model:page-size="pageSize" :page-sizes="[10, 20, 50]" layout="sizes, prev, pager, next" :total="rows.length" background/></div>
+      <div class="table-footer"><span>共 {{ rows.length }} 条记录</span><span v-if="autoScroll" class="scroll-mode-note">{{ rows.length ? '循环滚动中' : '暂无可滚动的工单' }}</span><el-pagination v-else v-model:current-page="page" v-model:page-size="pageSize" :page-sizes="[10, 20, 50]" layout="sizes, prev, pager, next" :total="rows.length" background/></div>
     </section>
     <el-dialog v-model="dialogOpen" title="工单详情" width="680px" class="detail-dialog"><el-descriptions v-if="selected" :column="2" border><el-descriptions-item v-for="[label, value] in detailFields" :key="label" :label="label">{{ value }}</el-descriptions-item></el-descriptions></el-dialog>
   </div>

@@ -41,10 +41,9 @@
 [data-theme="dark"] .chart-panel,[data-theme="dark"] .metric-card,[data-theme="dark"] .overview-state { background: #102338; border-color: #254158; box-shadow: 0 4px 20px rgba(0,0,0,.1); }
 [data-theme="dark"] .chart-panel:hover,[data-theme="dark"] .metric-card:hover { border-color: #365a74; }
 [data-theme="dark"] .page-heading h1,[data-theme="dark"] .panel-header h2,[data-theme="dark"] .metric-value { color: #e0f0fc; }
-[data-theme="dark"] .page-heading p,[data-theme="dark"] .panel-header p,[data-theme="dark"] .filter-field label,[data-theme="dark"] .metric-title,[data-theme="dark"] .table-footer,[data-theme="dark"] .table-mode-toggle { color: #91afc5; }
+[data-theme="dark"] .page-heading p,[data-theme="dark"] .panel-header p,[data-theme="dark"] .filter-field label,[data-theme="dark"] .metric-title,[data-theme="dark"] .table-footer { color: #91afc5; }
 [data-theme="dark"] .eyebrow,[data-theme="dark"] .order-copy-button { color: #65c6ed; }
 [data-theme="dark"] .date-chip,[data-theme="dark"] .panel-tag,[data-theme="dark"] .refresh-button,[data-theme="dark"] .fullscreen-button { background: #173147; border-color: #2b4c65; color: #9bd9f3; }
-[data-theme="dark"] .category-footnote span { background: #1d6f9a; color: #e7f6ff; }
 [data-theme="dark"] .dark-table { --el-table-bg-color:#102338; --el-table-tr-bg-color:#102338; --el-table-header-bg-color:#19344c; --el-table-row-hover-bg-color:#1c3c53; --el-table-border-color:#294257; --el-table-text-color:#bdd3e4; --el-table-header-text-color:#b6d9ef; }
 [data-theme="dark"] .dark-table .el-table__header .cell { color: #b6d9ef; }
 [data-theme="dark"] .dark-table .el-table__cell { border-bottom-color: #233d52; }
@@ -139,7 +138,6 @@
 [data-theme="dark"] .el-pagination.is-background .el-pager li.is-active { background: #237fab; border-color: #4fb2dc; color: #fff; }
 [data-theme="dark"] .el-pagination.is-background button:disabled { background: #10293c; color: #56748c; border-color: #203c51; }
 [data-theme="dark"] .table-footer { border-color: #294359; }
-[data-theme="dark"] .table-mode-toggle { border-color: #35516a; }
 [data-theme="dark"] .detail-dialog { --el-dialog-bg-color: #102338; --el-text-color-primary: #dfedf8; }
 [data-theme="dark"] .detail-dialog .el-descriptions {
   --el-descriptions-table-border: 1px solid #304b63;

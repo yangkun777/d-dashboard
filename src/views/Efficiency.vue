@@ -55,8 +55,8 @@ onBeforeUnmount(() => { dispose(); if (timer) window.clearInterval(timer) })
     <div v-if="error" class="data-error" role="status" aria-live="polite"><div><strong>{{ lastUpdated ? '刷新失败，已保留上次成功加载的数据' : '数据加载失败' }}</strong><span class="refresh-error-detail">{{ error }}</span><span v-if="lastUpdated" class="refresh-stale-note">当前内容为上次成功加载的数据，可能不是最新结果，请重试。</span></div><el-button link type="primary" @click="refresh">重试</el-button></div>
     <div class="efficiency-layout">
       <section class="efficiency-charts">
-        <div v-loading="loading && !lastUpdated" class="chart-panel"><div class="panel-header"><div><h2>工单处理工时分布</h2><p>按人员统计累计工时 / h</p></div><span class="panel-tag">累计 {{ hourTotal }} h</span></div><EChart v-if="hourItems.some(item => item.value > 0)" :option="hourOption"/><DataEmpty v-else-if="lastUpdated" /></div>
         <div v-loading="loading && !lastUpdated" class="chart-panel"><div class="panel-header"><div><h2>工单处理数量分布</h2><p>按人员统计已处理工单 / 单</p></div><span class="panel-tag">累计 {{ orderTotal }} 单</span></div><EChart v-if="orderItems.some(item => item.value > 0)" :option="orderOption"/><DataEmpty v-else-if="lastUpdated" /></div>
+        <div v-loading="loading && !lastUpdated" class="chart-panel"><div class="panel-header"><div><h2>工单处理工时分布</h2><p>按人员统计累计工时 / h</p></div><span class="panel-tag">累计 {{ hourTotal.toFixed(2) }} h</span></div><EChart v-if="hourItems.some(item => item.value > 0)" :option="hourOption"/><DataEmpty v-else-if="lastUpdated" /></div>
       </section>
       <section class="chart-panel efficiency-table-panel"><div class="panel-header"><div><h2>工单处理工时明细</h2><p>人员待办、预计完成工时与档期排布 · 每 10 分钟更新</p></div><span v-if="lastUpdated" class="panel-tag">上次成功更新 {{ lastUpdated }}</span></div>
         <div v-if="error" class="table-error"><span>{{ error }}</span><el-button link type="primary" @click="refresh">重试</el-button></div>
